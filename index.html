@@ -219,6 +219,16 @@
   }
   .bubble.model hr{ border:none; border-top:1px dashed rgba(33,29,21,.15); margin:10px 0; }
 
+  .copy-btn{
+    display:flex; align-items:center; gap:7px; width:fit-content; margin-top:12px; padding:7px 14px;
+    background:transparent; border:1px solid rgba(33,29,21,.18); border-radius:999px; cursor:pointer;
+    color:var(--ink-on-paper); font-family:'Oswald', sans-serif; letter-spacing:.02em; font-weight:600; font-size:12.5px;
+    transition:background .12s ease, border-color .12s ease, color .12s ease;
+  }
+  .copy-btn svg{ width:14px; height:14px; flex-shrink:0; }
+  .copy-btn:hover{ background:rgba(232,168,61,.12); border-color:var(--amber); }
+  .copy-btn.copied{ background:rgba(31,138,76,.12); border-color:#1f8a4c; color:#1f8a4c; }
+
   /* ---- color-coded result blocks: callouts / script lines / spec rows / option chips ---- */
   .bubble.model .callout{
     margin:9px 0; padding:9px 12px; border-radius:6px; border-left:3px solid;
@@ -1589,6 +1599,46 @@ CRE - Content Review Engine™ ได้
     return row;
   }
 
+  async function copyBubbleText(bubble, btn){
+    const text = bubble.dataset.rawText || bubble.textContent;
+    const original = btn.innerHTML;
+    try{
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> คัดลอกแล้ว';
+    }catch(e){
+      btn.innerHTML = 'คัดลอกไม่สำเร็จ';
+    }
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = original; }, 1800);
+  }
+
+  const COPY_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  // ใส่ปุ่มคัดลอกเฉพาะข้อความที่ "ดูเหมือนสคริปต์รีวิวที่เสร็จแล้ว" เท่านั้น
+  // (มี timecode แบบ 0:01–0:04 หรือมีคำว่า "บทพูดภาษาไทย") ไม่ใช่ทุกข้อความจากบอท
+  function looksLikeFinishedScript(text){
+    return /\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}/.test(text) || text.includes('บทพูดภาษาไทย');
+  }
+  function addCopyButton(bubble, rawText){
+    bubble.dataset.rawText = rawText;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.innerHTML = COPY_ICON_SVG + ' คัดลอกบทรีวิว';
+    btn.addEventListener('click', () => copyBubbleText(bubble, btn));
+    bubble.appendChild(btn);
+  }
+
   function addBubble(role, text, opts){
     opts = opts || {};
     emptyState.style.display = 'none';
@@ -1598,6 +1648,7 @@ CRE - Content Review Engine™ ได้
     bubble.className = 'bubble ' + role;
     if(role === 'model'){
       bubble.innerHTML = renderMarkdown(text);
+      if(looksLikeFinishedScript(text)) addCopyButton(bubble, text);
     } else if(role === 'error'){
       bubble.textContent = text;
     } else {
@@ -1630,6 +1681,8 @@ CRE - Content Review Engine™ ได้
         if(i < fullText.length){
           setTimeout(tick, TICK_MS);
         } else {
+          // เผยครบแล้ว — ใส่ปุ่มคัดลอกไว้ท้ายบทรีวิว ถ้าดูเป็นสคริปต์ที่เสร็จสมบูรณ์
+          if(looksLikeFinishedScript(fullText)) addCopyButton(bubble, fullText);
           resolve(row);
         }
       }
