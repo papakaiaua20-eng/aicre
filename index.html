@@ -372,10 +372,6 @@
             <label for="login-name">ชื่อผู้ใช้งาน</label>
             <input type="text" id="login-name" class="focus-ring" placeholder="ชื่อเรียก เช่น ทีมงาน / คุณ / ชื่อเล่น" autocomplete="name">
           </div>
-          <div>
-            <label for="login-phone">เบอร์โทรศัพท์</label>
-            <input type="tel" id="login-phone" class="focus-ring" placeholder="0XX-XXX-XXXX" autocomplete="tel">
-          </div>
           <div class="login-error" id="login-error"></div>
           <button type="submit" class="cta focus-ring">
             เข้าใช้งาน
@@ -486,14 +482,13 @@
   loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('login-name').value.trim();
-    const phone = document.getElementById('login-phone').value.trim();
-    if(!name || !phone){
-      loginError.textContent = 'กรุณากรอกชื่อและเบอร์โทรศัพท์ให้ครบ';
+    if(!name){
+      loginError.textContent = 'กรุณากรอกชื่อผู้ใช้งาน';
       loginError.style.display = 'block';
       return;
     }
     loginError.style.display = 'none';
-    const customer = { name, phone };
+    const customer = { name };
     try{ localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(customer)); }catch(err){}
     showLoginOrChat();
   });
@@ -502,7 +497,6 @@
     saveCurrentSession();
     try{ localStorage.removeItem(CUSTOMER_STORAGE_KEY); }catch(err){}
     document.getElementById('login-name').value = '';
-    document.getElementById('login-phone').value = '';
     showLoginOrChat();
   });
 
@@ -2749,6 +2743,41 @@ CRE - Content Review Engine™ ได้
       || m.includes('quota');
   }
 
+  // เช็คว่าเป็น error แบบ "โมเดลคนใช้เยอะชั่วคราว" หรือไม่ (503 / overloaded / high demand)
+  // ต่างจาก looksLikeAuthError ตรงที่ error แบบนี้แก้ด้วยการลองใหม่ ไม่ใช่เปลี่ยน API key
+  function looksLikeOverloadError(status, msg){
+    if(status === 503) return true;
+    const m = (msg || '').toLowerCase();
+    return m.includes('overloaded')
+      || m.includes('high demand')
+      || m.includes('unavailable')
+      || m.includes('try again later');
+  }
+
+  function addOverloadErrorPrompt(retryText){
+    removeScrollSpacer();
+    emptyState.style.display = 'none';
+    const row = document.createElement('div');
+    row.className = 'bubble-row error';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble error';
+    bubble.innerHTML = 'ตอนนี้โมเดลมีผู้ใช้งานเยอะเป็นการชั่วคราว รอสักครู่แล้วลองใหม่ได้เลย';
+    const retryBtn = document.createElement('button');
+    retryBtn.type = 'button';
+    retryBtn.className = 'error-link-btn';
+    retryBtn.innerHTML = `<span class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>ลองอีกครั้ง`;
+    retryBtn.addEventListener('click', () => {
+      row.remove();
+      inputBox.value = retryText;
+      sendMessage();
+    });
+    bubble.appendChild(retryBtn);
+    row.appendChild(bubble);
+    insertRow(row);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+    return row;
+  }
+
   function addKeyErrorPrompt(){
     removeScrollSpacer();
     emptyState.style.display = 'none';
@@ -3055,12 +3084,24 @@ CRE - Content Review Engine™ ได้
       const body = { contents: history };
       body.systemInstruction = { parts: [{ text: FIXED_SYSTEM_PROMPT }] };
 
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) }
-      );
-
-      const data = await res.json();
+      // ถ้าโมเดลตอบว่า "คนใช้เยอะชั่วคราว" (503/overloaded) ให้ลองใหม่อัตโนมัติก่อน 2 ครั้ง
+      // (หน่วงเวลาเพิ่มขึ้นทีละรอบ) ก่อนจะค่อยโชว์ปุ่มให้ผู้ใช้กดลองเองอีกที
+      const MAX_AUTO_RETRIES = 2;
+      let res, data;
+      for(let attempt = 0; ; attempt++){
+        res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+          { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) }
+        );
+        data = await res.json();
+        if(res.ok) break;
+        const errMsg = (data && data.error && data.error.message) ? data.error.message : '';
+        if(looksLikeOverloadError(res.status, errMsg) && attempt < MAX_AUTO_RETRIES){
+          await new Promise(r => setTimeout(r, (attempt + 1) * 1500));
+          continue;
+        }
+        break;
+      }
       typingEl.remove();
 
       if(!res.ok){
@@ -3068,6 +3109,8 @@ CRE - Content Review Engine™ ได้
         removeScrollSpacer();
         if(looksLikeAuthError(res.status, msg)){
           addKeyErrorPrompt();
+        } else if(looksLikeOverloadError(res.status, msg)){
+          addOverloadErrorPrompt(text);
         } else {
           addBubble('error', 'เกิดข้อผิดพลาด: ' + msg);
         }
