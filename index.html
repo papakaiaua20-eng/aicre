@@ -73,7 +73,7 @@
   .login-card label{ display:block; font-size:11.5px; color:var(--amber); letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; }
   .login-card input{
     width:100%; background:var(--panel-2); border:1px solid var(--border); border-radius:4px;
-    color:var(--ink); font-family:'IBM Plex Sans Thai', sans-serif; font-size:14.5px; padding:11px 13px;
+    color:var(--ink); font-family:'IBM Plex Sans Thai', sans-serif; font-size:16px; padding:11px 13px;
   }
   .login-card input:focus{ outline:none; border-color:var(--amber); }
   .login-error{
@@ -136,7 +136,7 @@
   .key-row{ display:flex; gap:8px; }
   .key-row input{
     flex:1; background:var(--panel); border:1px solid var(--border); border-radius:4px; color:var(--ink);
-    padding:10px 12px; font-family:'IBM Plex Mono', monospace; font-size:13px;
+    padding:10px 12px; font-family:'IBM Plex Mono', monospace; font-size:16px;
   }
   .key-row input:focus{ outline:none; border-color:var(--amber); }
   .key-row input.is-locked{ background:rgba(33,29,21,.05); color:var(--ink-muted); cursor:default; }
@@ -338,7 +338,7 @@
   .composer-inner{ max-width:720px; margin:0 auto; width:100%; display:flex; align-items:flex-end; gap:10px; }
   #input-box{
     flex:1; resize:none; background:var(--panel-2); border:1px solid var(--border); border-radius:6px;
-    color:var(--ink); font-family:'IBM Plex Sans Thai', sans-serif; font-size:14.5px; padding:12px 14px;
+    color:var(--ink); font-family:'IBM Plex Sans Thai', sans-serif; font-size:16px; padding:12px 14px;
     max-height:140px; line-height:1.5;
   }
   #input-box:focus{ outline:none; border-color:var(--amber); }
@@ -1435,6 +1435,9 @@ B. วิธีเลือกให้เหมาะกับพื้นท�
 C. จุดที่คนมักมองข้ามก่อนซื้อ
 D. 🔥 ขยี้คลิป — เจาะประเด็นหลักให้หนักขึ้น
 
+👉 ตอบตัวเลือก A, B, C, D หรือพิมพ์มุมที่อยากได้มาได้เลย!
+(ระบุช่วงเวลาที่อยากเน้นมุมนี้ได้ด้วย เช่น "A ช่วง 0-8 วิ" หรือ "C 8-16 วินาที")
+
 ผู้ใช้สามารถ:
 
 เลือก A
@@ -1443,6 +1446,7 @@ D. 🔥 ขยี้คลิป — เจาะประเด็นหลั�
 เลือก D
 เลือกหมวดอื่น
 พิมพ์ Content Focus เอง
+ระบุช่วงเวลา (วินาที) ที่อยากให้มุมนี้ถูกเน้นเพิ่มได้ด้วย เช่น "A ช่วง 0-8 วิ"
 
 AUTO FOCUS SELECTION RULE™
 
@@ -1459,6 +1463,31 @@ D → เปิดโหมด “ขยี้คลิป” และเลื
 
 หากผู้ใช้พิมพ์ Content Focus เอง:
 → ใช้ Content Focus ที่ผู้ใช้ระบุเป็นหลัก
+
+FOCUS TIME RANGE RULE™
+
+ทุกครั้งที่แสดงตัวเลือก A/B/C/D ให้ต่อท้ายด้วยตัวอย่างการระบุช่วงเวลาเสมอ ใช้รูปแบบนี้:
+
+👉 ตอบตัวเลือก A, B, C, D หรือพิมพ์มุมที่อยากได้มาได้เลย!
+(ระบุช่วงเวลาที่อยากเน้นมุมนี้ได้ด้วย เช่น "A ช่วง 0-8 วิ" หรือ "C 8-16 วินาที")
+
+ผู้ใช้สามารถระบุช่วงเวลา (วินาที) ที่ต้องการให้ Content Focus ที่เลือกไปถูกเน้นในคลิปได้ นอกเหนือจากตัวอักษร A/B/C/D หรือ Focus ที่พิมพ์เอง
+
+ตัวอย่างการสั่ง:
+
+"A ช่วง 0-8 วิ"
+"C 8-16 วินาที"
+"D ในช่วงครึ่งหลังของคลิป"
+
+เมื่อผู้ใช้ระบุช่วงเวลามาด้วย:
+
+บันทึกเป็น FOCUS TIME RANGE
+ต้องจัด Scene ให้ Content Focus นั้นปรากฏเด่นในช่วงเวลาที่ระบุเป็นหลัก
+Scene นอกช่วงเวลาที่ระบุยังคงดำเนินเนื้อหาปกติตาม Content Angle อื่นได้ตามความเหมาะสม
+ห้ามยัด Content Focus นั้นตลอดทั้งคลิปถ้าผู้ใช้ระบุช่วงเวลามาชัดเจนแล้ว
+
+หากผู้ใช้ไม่ได้ระบุช่วงเวลา:
+ให้ AI กระจาย Content Focus ตลอดทั้งคลิปตามความเหมาะสมเหมือนเดิม
 
 D — ขยี้คลิป™
 
